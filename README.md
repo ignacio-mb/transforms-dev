@@ -35,6 +35,12 @@ This repo replaces dbt for internal data modeling at Metabase. Instead of dbt's 
 
 **The loop:** edit SQL → run `make build` → commit → Metabase picks it up via Remote Sync. Or edit in Metabase's UI → Metabase pushes YAML to a branch → you pull.
 
+## Scripts
+
+| Script | Direction | What it does |
+|---|---|---|
+| `make pull` | Metabase → SQL | Reads the YAML in `collections/` (written by Metabase via Remote Sync) and extracts each transform into an editable `.sql` file and a `.meta.yml` file in `transforms/<domain>/`. Run after `git pull`. |
+| `make build` | SQL → Metabase | Reads your `.sql` + `.meta.yml` source files in `transforms/` and assembles them back into the `collections/` YAML structure that Remote Sync expects. Run after editing SQL, before you commit. |
 ## Quick start
 
 ```bash
@@ -87,36 +93,9 @@ transforms-models/
 └── transforms.yml                  # project config (database name, schemas)
 ```
 
-## Key concepts
-
-| dbt concept | Metabase Transforms equivalent |
-|---|---|
-| `models/domain/model.sql` | `transforms/domain/transform.sql` |
-| `schema.yml` | `.meta.yml` per transform |
-| `{{ ref('other_model') }}` | Direct table reference or `{{ #snippet }}` |
-| `dbt run` | Transform runs on schedule in Metabase |
-| `dbt build` | `make build` (generates serialization YAML) |
-| Materializations (table/view) | All transforms are materialized tables |
-| Seeds | CSV upload in Metabase |
-| Macros | Snippets (with variables) |
-
 ## Environments
 
 | Instance | Mode | Branch | Purpose |
 |---|---|---|---|
 | `dev.metabase.internal` | Read-write | `dev/*`, feature branches | Build + test transforms |
 | `prod.metabase.internal` | Read-only | `main` | Production analytics |
-
-## Prerequisites
-
-- Metabase Pro/Enterprise with Transforms add-on
-- Remote Sync enabled and connected to this repo
-- Transform sync toggled on in Admin → Remote Sync
-- Database user with write privileges (for transform execution)
-- Python 3.9+ (for the build script)
-
-## Documentation
-
-- [Workflow guide](docs/workflow.md) — day-to-day development loop
-- [Adding a transform](docs/adding-a-transform.md) — step-by-step guide
-- [Conventions](docs/conventions.md) — naming, SQL style, review checklist
