@@ -1,4 +1,4 @@
-# transforms-models
+# transforms-dev
 
 Data transforms for Metabase, version-controlled and synced via [Remote Sync](https://www.metabase.com/docs/latest/installation-and-operation/remote-sync).
 
