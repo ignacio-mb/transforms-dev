@@ -7,10 +7,10 @@ This repo replaces dbt for internal data modeling at Metabase. Instead of dbt's 
 ## How it works
 
 ```
-┌──────────────────┐       git push        ┌──────────────────┐
+┌──────────────────┐       git push         ┌──────────────────┐
 │                  │ ───────────────────▶   │                  │
-│  Your editor     │                        │  GitHub repo     │
-│  (VS Code, etc)  │   ◀───────────────    │  (this repo)     │
+│  Code editor     │                        │  GitHub repo     │
+|                  │   ◀───────────────     │  (this repo)     │
 │                  │       git pull         │                  │
 └──────────────────┘                        └────────┬─────────┘
                                                      │
