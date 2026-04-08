@@ -3,3 +3,5 @@ table_name: monthly_revenue
 schema: transforms
 entity_id: P3HjfT2ySB3doo7F0f50S
 collection_id: ax3R21WJwpE2Duf4Ln1Gs
+created_at: '2026-04-08T14:47:25.037946Z'
+creator_id: ignacio@metabase.com

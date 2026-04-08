@@ -1,10 +1,13 @@
 display_name: Support Weekly
-description: >
-  Weekly aggregates: ticket volume, SLA compliance, resolution rates.
+description: 'Weekly aggregates: ticket volume, SLA compliance, resolution rates.
   Used in the weekly support standup.
 
+  '
 table_name: support_weekly
+schema: transforms
 tags:
-  - daily
-  - support
-incremental: false
+- daily
+- support
+entity_id: eCx1aJyaglfPaSTxbGVyw
+collection_id: YSnkWGtlMqRrZZDVSbqEa
+created_at: '2026-04-08T15:49:07.436665Z'

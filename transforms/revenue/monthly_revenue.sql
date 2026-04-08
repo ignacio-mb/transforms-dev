@@ -3,8 +3,6 @@
 -- Revenue aggregated by month, plan, and billing cycle.
 -- Core model for ARR dashboards and trend analysis.
 
-
--- THIS IS ANOTHER CHANGE!
 WITH invoice_months AS (
   SELECT
     i.customer_id,
