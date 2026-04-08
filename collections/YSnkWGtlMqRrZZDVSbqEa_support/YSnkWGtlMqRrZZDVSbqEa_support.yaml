@@ -1,0 +1,10 @@
+archived: false
+description: null
+entity_id: YSnkWGtlMqRrZZDVSbqEa
+name: Support
+personal_owner_id: null
+slug: support
+serdes/meta:
+- id: YSnkWGtlMqRrZZDVSbqEa
+  label: support
+  model: Collection

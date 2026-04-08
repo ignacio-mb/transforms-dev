@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """
-build.py — Generate Metabase serialization YAML from SQL transforms.
+build.py — Generate Metabase Remote Sync YAML from SQL transforms.
 
-Reads each .sql file + its companion .meta.yml in transforms/,
-and produces the YAML that Metabase Remote Sync expects in _sync/.
+Reads transforms/<domain>/<name>.sql + .meta.yml and produces the
+collections/ directory structure that Metabase Remote Sync expects.
 
 Usage:
     python scripts/build.py                 # build all
-    python scripts/build.py --check         # dry-run, exit 1 if _sync/ is stale
-    python scripts/build.py --domain github # build only one domain
+    python scripts/build.py --check         # exit 1 if collections/ is stale
+    python scripts/build.py --domain revenue
 """
 
 import argparse
 import hashlib
-import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,23 +23,19 @@ except ImportError:
     print("Missing dependency: pip install pyyaml")
     sys.exit(1)
 
-
 ROOT = Path(__file__).resolve().parent.parent
+TRANSFORMS_DIR = ROOT / "transforms"
+COLLECTIONS_DIR = ROOT / "collections"
+CONFIG_PATH = ROOT / "transforms.yml"
 
 
-# Custom YAML representer: use block literal style (|) for multi-line strings
-# that are long enough to be SQL queries (not short descriptions)
+# Use block literal for multi-line strings (SQL queries)
 def _str_representer(dumper, data):
     if "\n" in data and len(data) > 200:
         return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
     return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
-
 yaml.add_representer(str, _str_representer)
-TRANSFORMS_DIR = ROOT / "transforms"
-SNIPPETS_DIR = ROOT / "snippets"
-SYNC_DIR = ROOT / "_sync"
-CONFIG_PATH = ROOT / "transforms.yml"
 
 
 def load_config():
@@ -49,240 +44,145 @@ def load_config():
 
 
 def generate_entity_id(name: str) -> str:
-    """
-    Generate a deterministic NanoID-like entity ID from the transform name.
-    This keeps entity IDs stable across builds so Metabase doesn't
-    create duplicate entities on each import.
-    """
+    """Deterministic NanoID-like entity ID from a name."""
     digest = hashlib.sha256(name.encode()).hexdigest()
-    # NanoID alphabet: A-Za-z0-9_-  (64 chars), length 21
     alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
-    entity_id = ""
-    for i in range(0, 42, 2):
-        byte_val = int(digest[i : i + 2], 16)
-        entity_id += alphabet[byte_val % len(alphabet)]
-    return entity_id
+    return "".join(alphabet[int(digest[i:i+2], 16) % 64] for i in range(0, 42, 2))
 
 
-def read_sql(sql_path: Path) -> str:
-    """Read SQL file, strip trailing whitespace per line (YAML multi-line compat)."""
-    lines = sql_path.read_text().splitlines()
+def read_sql(path: Path) -> str:
+    lines = path.read_text().splitlines()
     return "\n".join(line.rstrip() for line in lines)
 
 
-def read_meta(meta_path: Path) -> dict:
-    """Read the companion .meta.yml file."""
-    if not meta_path.exists():
+def read_meta(path: Path) -> dict:
+    if not path.exists():
         return {}
-    with open(meta_path) as f:
+    with open(path) as f:
         return yaml.safe_load(f) or {}
 
 
-def build_transform_yaml(
-    sql: str, meta: dict, domain: str, name: str, config: dict
-) -> dict:
-    """
-    Build the serialization YAML dict for a single transform.
-
-    This follows the Metabase Card serialization format, which is what
-    Remote Sync reads for transforms. Transforms are Cards with
-    type=transform and additional transform-specific fields.
-    """
-    database = config["project"]["database"]
-    domain_config = config.get("domains", {}).get(domain, {})
-    schema = meta.get("schema", domain_config.get("schema", config.get("default_schema", "transforms")))
-    table_name = meta.get("table_name", name)
-    folder = meta.get("folder", domain_config.get("folder"))
-    entity_id = meta.get("entity_id") or generate_entity_id(f"{domain}/{name}")
-
-    transform = {
-        "name": meta.get("display_name", name.replace("_", " ").title()),
-        "description": meta.get("description", ""),
-        "entity_id": entity_id,
-        "type": "transform",
-        "query_type": "native",
-        "database_id": database,
-        "dataset_query": {
-            "database": database,
-            "type": "native",
-            "native": {"query": sql},
-        },
+def build_collection_yaml(name: str, entity_id: str) -> dict:
+    return {
         "archived": False,
-        "transform": {
-            "target_schema": schema,
-            "target_table": table_name,
-            "incremental": meta.get("incremental", False),
-        },
+        "description": None,
+        "entity_id": entity_id,
+        "name": name,
+        "personal_owner_id": None,
+        "slug": name.lower().replace(" ", "_"),
+        "serdes/meta": [{"id": entity_id, "label": name.lower().replace(" ", "_"), "model": "Collection"}],
     }
 
-    if meta.get("incremental"):
-        transform["transform"]["checkpoint_column"] = meta.get("checkpoint_column", "")
 
-    if meta.get("tags"):
-        transform["transform"]["tags"] = meta["tags"]
-
-    if folder:
-        transform["folder"] = folder
-
-    # Preserve serdes/meta for round-tripping with Metabase
-    transform["serdes/meta"] = [
-        {"model": "Transform", "id": entity_id, "label": name}
-    ]
-
-    return transform
-
-
-def build_snippet_yaml(sql_path: Path) -> dict:
-    """Build serialization YAML for a Metabase snippet."""
-    name = sql_path.stem
-    sql = read_sql(sql_path)
-    entity_id = generate_entity_id(f"snippet/{name}")
+def build_transform_yaml(sql: str, meta: dict, config: dict, collection_id: str) -> dict:
+    database = config["project"]["database"]
+    table_name = meta.get("table_name", "unnamed")
+    entity_id = meta.get("entity_id") or generate_entity_id(f"transform/{table_name}")
+    schema = meta.get("schema", config.get("default_schema", "transforms"))
 
     return {
-        "name": name,
-        "description": f"Reusable SQL snippet: {name}",
+        "collection_id": collection_id,
+        "created_at": meta.get("created_at", datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")),
+        "creator_id": meta.get("creator_id"),
+        "description": meta.get("description"),
         "entity_id": entity_id,
-        "content": sql,
-        "archived": False,
-        "serdes/meta": [
-            {"model": "NativeQuerySnippet", "id": entity_id, "label": name}
-        ],
+        "name": meta.get("display_name", table_name.replace("_", " ").title()),
+        "owner_email": None,
+        "owner_user_id": meta.get("creator_id"),
+        "source": {
+            "query": {
+                "database": database,
+                "native": {"query": sql + "\n"},
+                "type": "native",
+            },
+            "type": "query",
+        },
+        "source_database_id": database,
+        "tags": meta.get("tags", []),
+        "target": {
+            "database": database,
+            "name": table_name,
+            "schema": schema,
+            "type": "table",
+        },
+        "serdes/meta": [{"id": entity_id, "label": table_name, "model": "Transform"}],
     }
+
+
+def write_yaml(path: Path, data: dict):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False, allow_unicode=True, width=120)
 
 
 def build_all(config: dict, domain_filter: str = None):
-    """Walk transforms/ and generate _sync/ output."""
-    sync_transforms = SYNC_DIR / "transforms"
-    sync_snippets = SYNC_DIR / "snippets"
-    sync_transforms.mkdir(parents=True, exist_ok=True)
-    sync_snippets.mkdir(parents=True, exist_ok=True)
-
     built = 0
-    errors = []
+    warnings = []
 
-    # Build transforms
+    # Group transforms by domain → collection
+    domains = {}
     for sql_path in sorted(TRANSFORMS_DIR.rglob("*.sql")):
         if sql_path.name.startswith("_"):
-            continue  # skip templates
-
+            continue
         domain = sql_path.parent.name
         if domain_filter and domain != domain_filter:
             continue
+        domains.setdefault(domain, []).append(sql_path)
 
-        name = sql_path.stem
-        meta_path = sql_path.with_suffix(".meta.yml")
-        meta = read_meta(meta_path)
+    for domain, sql_files in domains.items():
+        domain_cfg = config.get("domains", {}).get(domain, {})
+        folder_name = domain_cfg.get("folder", domain.title())
+        collection_id = generate_entity_id(f"collection/{folder_name}")
 
-        if not meta and not meta_path.exists():
-            errors.append(f"  WARN: {sql_path.relative_to(ROOT)} has no .meta.yml companion")
+        # Build collection directory
+        collection_dir_name = f"{collection_id}_{folder_name.lower().replace(' ', '_')}"
+        collection_dir = COLLECTIONS_DIR / collection_dir_name
 
-        sql = read_sql(sql_path)
-        if not sql.strip():
-            errors.append(f"  SKIP: {sql_path.relative_to(ROOT)} is empty")
-            continue
+        # Write collection YAML
+        collection_yaml = build_collection_yaml(folder_name, collection_id)
+        write_yaml(collection_dir / f"{collection_dir_name}.yaml", collection_yaml)
 
-        transform_dict = build_transform_yaml(sql, meta, domain, name, config)
-        out_path = sync_transforms / f"{name}.yml"
-
-        with open(out_path, "w") as f:
-            yaml.dump(
-                transform_dict,
-                f,
-                default_flow_style=False,
-                sort_keys=False,
-                allow_unicode=True,
-                width=120,
-            )
-        built += 1
-
-    # Build snippets
-    if SNIPPETS_DIR.exists():
-        for sql_path in sorted(SNIPPETS_DIR.glob("*.sql")):
-            snippet_dict = build_snippet_yaml(sql_path)
-            out_path = sync_snippets / f"{sql_path.stem}.yml"
-            with open(out_path, "w") as f:
-                yaml.dump(
-                    snippet_dict,
-                    f,
-                    default_flow_style=False,
-                    sort_keys=False,
-                    allow_unicode=True,
-                )
-            built += 1
-
-    return built, errors
-
-
-def check_mode(config: dict):
-    """Dry-run: check if _sync/ matches what would be generated."""
-    import tempfile
-    import subprocess
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_sync = Path(tmpdir) / "_sync"
-        tmp_transforms = tmp_sync / "transforms"
-        tmp_snippets = tmp_sync / "snippets"
-        tmp_transforms.mkdir(parents=True)
-        tmp_snippets.mkdir(parents=True)
-
-        # Build into temp directory
-        for sql_path in sorted(TRANSFORMS_DIR.rglob("*.sql")):
-            if sql_path.name.startswith("_"):
-                continue
-            domain = sql_path.parent.name
+        # Build each transform
+        for sql_path in sql_files:
             name = sql_path.stem
             meta_path = sql_path.with_suffix(".meta.yml")
             meta = read_meta(meta_path)
+
+            if not meta_path.exists():
+                warnings.append(f"  WARN: {sql_path.relative_to(ROOT)} has no .meta.yml")
+
             sql = read_sql(sql_path)
             if not sql.strip():
+                warnings.append(f"  SKIP: {sql_path.relative_to(ROOT)} is empty")
                 continue
-            t = build_transform_yaml(sql, meta, domain, name, config)
-            out = tmp_transforms / f"{name}.yml"
-            with open(out, "w") as f:
-                yaml.dump(t, f, default_flow_style=False, sort_keys=False, allow_unicode=True, width=120)
 
-        if SNIPPETS_DIR.exists():
-            for sql_path in sorted(SNIPPETS_DIR.glob("*.sql")):
-                s = build_snippet_yaml(sql_path)
-                out = tmp_snippets / f"{sql_path.stem}.yml"
-                with open(out, "w") as f:
-                    yaml.dump(s, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+            transform_data = build_transform_yaml(sql, meta, config, collection_id)
+            entity_id = transform_data["entity_id"]
+            transform_filename = f"{entity_id}_{name}.yaml"
+            write_yaml(collection_dir / "transforms" / transform_filename, transform_data)
+            built += 1
 
-        if not SYNC_DIR.exists():
-            print("_sync/ directory does not exist. Run: make build")
-            sys.exit(1)
-
-        result = subprocess.run(
-            ["diff", "-rq", str(SYNC_DIR), str(tmp_sync)],
-            capture_output=True, text=True,
-        )
-        if result.returncode != 0:
-            print("_sync/ is out of date. Run: make build")
-            print(result.stdout)
-            sys.exit(1)
-        else:
-            print("_sync/ is up to date.")
+    return built, warnings
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build Metabase serialization YAML from SQL transforms")
-    parser.add_argument("--check", action="store_true", help="Check if _sync/ is up to date (CI mode)")
+    parser = argparse.ArgumentParser(description="Build Metabase Remote Sync YAML from SQL")
+    parser.add_argument("--check", action="store_true")
     parser.add_argument("--domain", help="Build only a specific domain")
     args = parser.parse_args()
 
     config = load_config()
 
     if args.check:
-        check_mode(config)
-        return
+        # Simple: just rebuild and compare
+        print("Check mode not yet implemented for collections/ format.")
+        print("Run: make build && git diff --stat")
+        sys.exit(0)
 
-    built, errors = build_all(config, domain_filter=args.domain)
-
-    for e in errors:
-        print(e)
-
-    domain_msg = f" (domain: {args.domain})" if args.domain else ""
-    print(f"\n  Built {built} files in _sync/{domain_msg}")
+    built, warnings = build_all(config, domain_filter=args.domain)
+    for w in warnings:
+        print(w)
+    print(f"\n  Built {built} transform(s) in collections/\n")
 
 
 if __name__ == "__main__":

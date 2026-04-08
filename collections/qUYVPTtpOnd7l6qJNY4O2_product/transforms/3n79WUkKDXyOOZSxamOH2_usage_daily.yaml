@@ -1,0 +1,43 @@
+collection_id: qUYVPTtpOnd7l6qJNY4O2
+created_at: '2026-04-08T15:46:52.727617Z'
+creator_id: null
+description: null
+entity_id: 3n79WUkKDXyOOZSxamOH2
+name: Usage Daily
+owner_email: null
+owner_user_id: null
+source:
+  query:
+    database: Supabase
+    native:
+      query: |
+        -- Usage Daily
+        --
+        -- Daily product usage aggregates per customer.
+        -- The most granular usage model — everything else rolls up from here.
+
+        SELECT
+          pe.event_date AS day,
+          pe.customer_id,
+          c.company,
+          c.plan,
+          pe.event_name,
+          sum(pe.event_count) AS event_count,
+          count(DISTINCT pe.user_email) AS unique_users
+        FROM raw.product_events pe
+        JOIN raw.customers c ON pe.customer_id = c.id
+        GROUP BY 1, 2, 3, 4, 5
+        ORDER BY 1 DESC, event_count DESC
+    type: native
+  type: query
+source_database_id: Supabase
+tags: []
+target:
+  database: Supabase
+  name: usage_daily
+  schema: transforms
+  type: table
+serdes/meta:
+- id: 3n79WUkKDXyOOZSxamOH2
+  label: usage_daily
+  model: Transform

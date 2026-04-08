@@ -1,10 +1,5 @@
 display_name: Feature Adoption
-description: >
-  Feature enablement vs actual usage per customer.
-  Identifies adoption gaps and power users.
-
 table_name: feature_adoption
-tags:
-  - daily
-  - product
-incremental: false
+schema: transforms
+entity_id: VpsYThmWt-xb1npg1Z4_J
+collection_id: _QM_tzdeP7JPlh0MjNkVQ

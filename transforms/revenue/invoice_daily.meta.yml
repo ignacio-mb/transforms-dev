@@ -1,10 +1,5 @@
-display_name: Invoice Daily
-description: >
-  Daily invoice aggregates by plan and status.
-  Lightweight model for real-time revenue dashboards.
-
+display_name: Invoice daily
 table_name: invoice_daily
-tags:
-  - hourly
-incremental: true
-checkpoint_column: day
+schema: transforms
+entity_id: sYy9syszHo-yX6rPXbmqn
+collection_id: ax3R21WJwpE2Duf4Ln1Gs

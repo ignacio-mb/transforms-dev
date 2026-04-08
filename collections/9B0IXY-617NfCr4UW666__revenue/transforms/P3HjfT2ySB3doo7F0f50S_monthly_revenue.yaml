@@ -1,0 +1,72 @@
+collection_id: 9B0IXY-617NfCr4UW666_
+created_at: '2026-04-08T15:46:52.731768Z'
+creator_id: null
+description: null
+entity_id: P3HjfT2ySB3doo7F0f50S
+name: Monthly Revenue
+owner_email: null
+owner_user_id: null
+source:
+  query:
+    database: Supabase
+    native:
+      query: |
+        -- Monthly Revenue
+        --
+        -- Revenue aggregated by month, plan, and billing cycle.
+        -- Core model for ARR dashboards and trend analysis.
+
+        WITH invoice_months AS (
+          SELECT
+            i.customer_id,
+            date_trunc('month', i.period_start)::date AS month,
+            i.amount,
+            i.status,
+            i.paid_at,
+            c.plan,
+            c.billing_cycle,
+            c.company,
+            c.country
+          FROM raw.invoices i
+          JOIN raw.customers c ON i.customer_id = c.id
+        ),
+
+        final AS (
+          SELECT
+            month,
+            plan,
+            billing_cycle,
+            country,
+            count(DISTINCT customer_id) AS paying_customers,
+            count(*) AS invoice_count,
+            count(*) FILTER (WHERE status = 'paid') AS paid_count,
+            count(*) FILTER (WHERE status = 'failed') AS failed_count,
+            count(*) FILTER (WHERE status = 'refunded') AS refunded_count,
+            sum(amount) AS gross_revenue,
+            sum(amount) FILTER (WHERE status = 'paid') AS net_revenue,
+            sum(amount) FILTER (WHERE status = 'refunded') AS refunded_amount,
+            round(
+              sum(amount) FILTER (WHERE status = 'paid') * 12, 2
+            ) AS annualized_revenue,
+            round(
+              avg(amount) FILTER (WHERE status = 'paid'), 2
+            ) AS avg_revenue_per_customer
+          FROM invoice_months
+          GROUP BY month, plan, billing_cycle, country
+        )
+
+        SELECT * FROM final
+        ORDER BY month DESC, net_revenue DESC
+    type: native
+  type: query
+source_database_id: Supabase
+tags: []
+target:
+  database: Supabase
+  name: monthly_revenue
+  schema: transforms
+  type: table
+serdes/meta:
+- id: P3HjfT2ySB3doo7F0f50S
+  label: monthly_revenue
+  model: Transform

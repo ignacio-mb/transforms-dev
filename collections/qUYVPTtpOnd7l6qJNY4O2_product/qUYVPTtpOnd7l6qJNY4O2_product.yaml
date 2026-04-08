@@ -1,0 +1,10 @@
+archived: false
+description: null
+entity_id: qUYVPTtpOnd7l6qJNY4O2
+name: Product
+personal_owner_id: null
+slug: product
+serdes/meta:
+- id: qUYVPTtpOnd7l6qJNY4O2
+  label: product
+  model: Collection

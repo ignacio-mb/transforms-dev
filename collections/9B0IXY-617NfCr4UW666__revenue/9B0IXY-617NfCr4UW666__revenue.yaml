@@ -1,0 +1,10 @@
+archived: false
+description: null
+entity_id: 9B0IXY-617NfCr4UW666_
+name: Revenue
+personal_owner_id: null
+slug: revenue
+serdes/meta:
+- id: 9B0IXY-617NfCr4UW666_
+  label: revenue
+  model: Collection

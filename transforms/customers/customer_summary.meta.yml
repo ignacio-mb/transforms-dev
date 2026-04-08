@@ -1,10 +1,5 @@
 display_name: Customer Summary
-description: >
-  One row per customer with lifetime revenue, support stats,
-  usage metrics, and health status. The canonical customer table.
-
 table_name: customer_summary
-tags:
-  - daily
-  - critical
-incremental: false
+schema: transforms
+entity_id: ATJcRFlA0mL5l6CQsGAWA
+collection_id: xWHhkbPvq9R9gVa3Si58u

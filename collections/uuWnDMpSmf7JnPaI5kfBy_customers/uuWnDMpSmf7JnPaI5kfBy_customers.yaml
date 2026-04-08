@@ -1,0 +1,10 @@
+archived: false
+description: null
+entity_id: uuWnDMpSmf7JnPaI5kfBy
+name: Customers
+personal_owner_id: null
+slug: customers
+serdes/meta:
+- id: uuWnDMpSmf7JnPaI5kfBy
+  label: customers
+  model: Collection
