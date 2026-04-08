@@ -1,0 +1,11 @@
+display_name: Ticket Summary
+description: >
+  Enriched support tickets with SLA compliance, response times,
+  and customer context. Core model for support team dashboards.
+
+table_name: ticket_summary
+tags:
+  - daily
+  - support
+incremental: true
+checkpoint_column: created_at

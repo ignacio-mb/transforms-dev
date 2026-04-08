@@ -1,7 +1,7 @@
 display_name: Feature Adoption
 description: >
-  Per-instance feature enablement and usage metrics.
-  Powers product adoption dashboards and rollout tracking.
+  Feature enablement vs actual usage per customer.
+  Identifies adoption gaps and power users.
 
 table_name: feature_adoption
 tags:

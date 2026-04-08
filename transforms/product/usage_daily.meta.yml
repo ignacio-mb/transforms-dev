@@ -1,0 +1,11 @@
+display_name: Usage Daily
+description: >
+  Daily event counts per customer and event type.
+  Base table for all usage analytics.
+
+table_name: usage_daily
+tags:
+  - daily
+  - product
+incremental: true
+checkpoint_column: day
