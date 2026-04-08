@@ -1,0 +1,11 @@
+display_name: Support Ticket Summary
+description: >
+  Enriched support tickets with customer context, response times,
+  and resolution metrics. Core model for Success Engineering.
+
+table_name: support_ticket_summary
+tags:
+  - daily
+  - success
+incremental: true
+checkpoint_column: created_at

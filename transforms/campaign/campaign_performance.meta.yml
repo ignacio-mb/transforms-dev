@@ -1,0 +1,11 @@
+display_name: Campaign Performance
+description: >
+  Unified paid + email campaign metrics with CTR and CPC.
+  Used by Marketing for weekly performance reviews.
+
+table_name: campaign_performance
+tags:
+  - daily
+  - marketing
+incremental: true
+checkpoint_column: date

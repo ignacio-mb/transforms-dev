@@ -1,0 +1,111 @@
+-- Monthly Revenue by Customer
+--
+-- Recognized monthly revenue per customer, combining self-service (Stripe)
+-- and sold (Enterprise) subscriptions. Core revenue reporting model.
+
+WITH monthly_self_service AS (
+  SELECT
+    si.period_ended_at::date AS recognized_at,
+    si.billing_cycle,
+    si.plan_name,
+    si.purchase_type,
+    si.amount,
+    si.stripe_customer_id,
+    si.subscription_id AS stripe_subscription_id,
+    si.plan_id AS stripe_plan_id,
+    ss.is_auto_renewal
+  FROM stripe.stripe_invoice si
+  JOIN stripe.stripe_subscription ss ON ss.id = si.subscription_id
+  LEFT JOIN stripe.stripe_customer sc ON sc.id = ss.stripe_customer_id
+  WHERE si.is_arr_source
+    AND si.plan_name IN ('starter', 'pro', 'premium-embedding-deprecated')
+    AND si.billing_cycle = 'monthly'
+    AND date_trunc('month', si.period_ended_at) <= date_trunc('month', CURRENT_DATE)
+    AND sc.email NOT LIKE '%@metabase.com'
+    AND si.amount > 0
+),
+
+sold_subscriptions AS (
+  SELECT
+    a.customer_name,
+    ah.valid_from AS period_start,
+    ah.valid_to AS period_end,
+    ah.annual_value / 12 AS monthly_price,
+    a.stripe_customer_id,
+    a.stripe_subscription_id,
+    a.is_auto_renewal,
+    ah.plan_name,
+    ah.purchase_type,
+    ah.billing_cycle,
+    a.id AS account_id
+  FROM salesforce.int_account a
+  JOIN salesforce.account_history ah ON a.id = ah.account_id
+  WHERE COALESCE(ah.plan_name, a.plan_name) = 'enterprise'
+    AND a.is_converted
+),
+
+monthly_sold AS (
+  SELECT
+    (period_start::date + month_offset * INTERVAL '1 month')::date AS recognized_at,
+    billing_cycle,
+    plan_name,
+    purchase_type,
+    is_auto_renewal,
+    monthly_price AS amount,
+    stripe_customer_id,
+    stripe_subscription_id,
+    NULL AS stripe_plan_id,
+    account_id
+  FROM sold_subscriptions s
+  CROSS JOIN generate_series(0, 1000) AS month_offset
+  WHERE period_start + month_offset * INTERVAL '1 month'
+    < COALESCE(period_end, date_trunc('month', now()) + INTERVAL '1 month')
+),
+
+combined AS (
+  SELECT
+    recognized_at,
+    billing_cycle,
+    plan_name,
+    purchase_type,
+    is_auto_renewal,
+    amount,
+    stripe_customer_id,
+    stripe_subscription_id,
+    stripe_plan_id,
+    NULL AS account_id
+  FROM monthly_self_service
+  UNION ALL
+  SELECT
+    recognized_at,
+    billing_cycle,
+    plan_name,
+    purchase_type,
+    is_auto_renewal,
+    amount,
+    stripe_customer_id,
+    stripe_subscription_id,
+    stripe_plan_id,
+    account_id
+  FROM monthly_sold
+),
+
+final AS (
+  SELECT
+    md5(recognized_at::text || stripe_subscription_id) AS id,
+    recognized_at,
+    round(amount::decimal, 2) AS amount,
+    round(amount::decimal * 12, 2) AS arr,
+    plan_name,
+    purchase_type,
+    billing_cycle,
+    is_auto_renewal,
+    stripe_customer_id,
+    stripe_subscription_id,
+    stripe_plan_id,
+    account_id
+  FROM combined
+  WHERE recognized_at < date_trunc('month', CURRENT_DATE) + INTERVAL '1 month'
+)
+
+SELECT * FROM final

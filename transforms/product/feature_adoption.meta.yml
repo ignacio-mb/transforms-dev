@@ -1,0 +1,10 @@
+display_name: Feature Adoption
+description: >
+  Per-instance feature enablement and usage metrics.
+  Powers product adoption dashboards and rollout tracking.
+
+table_name: feature_adoption
+tags:
+  - daily
+  - product
+incremental: false

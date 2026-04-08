@@ -1,0 +1,48 @@
+-- Feature Adoption
+--
+-- Tracks which Metabase features are enabled and used per instance.
+-- Source for product adoption dashboards and feature rollout tracking.
+
+WITH features AS (
+  SELECT
+    instance_id,
+    feature_name,
+    is_enabled,
+    first_enabled_at,
+    last_seen_at,
+    usage_count_30d
+  FROM staging.instance_features
+  WHERE last_seen_at >= CURRENT_DATE - INTERVAL '30 days'
+),
+
+instances AS (
+  SELECT
+    id AS instance_id,
+    version,
+    plan_name,
+    hosting_type,
+    created_at AS instance_created_at,
+    user_count
+  FROM staging.metabase_instances
+  WHERE is_active
+),
+
+final AS (
+  SELECT
+    f.instance_id,
+    f.feature_name,
+    f.is_enabled,
+    f.first_enabled_at,
+    f.last_seen_at,
+    f.usage_count_30d,
+    i.version,
+    i.plan_name,
+    i.hosting_type,
+    i.instance_created_at,
+    i.user_count,
+    CURRENT_DATE - f.first_enabled_at::date AS days_since_enabled
+  FROM features f
+  JOIN instances i ON f.instance_id = i.instance_id
+)
+
+SELECT * FROM final

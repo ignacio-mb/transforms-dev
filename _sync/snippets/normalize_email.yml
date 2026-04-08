@@ -1,0 +1,16 @@
+name: normalize_email
+description: 'Reusable SQL snippet: normalize_email'
+entity_id: yTbH7OLOsVqGQpBKgkwr0
+content: |-
+  -- Snippet: normalize_email
+  -- Extracts and lowercases the domain from an email address.
+  -- Usage in transforms: {{ snippet: normalize_email }}
+  --
+  -- Expects a column called `email` in scope.
+
+  lower(split_part(email, '@', 2))
+archived: false
+serdes/meta:
+- model: NativeQuerySnippet
+  id: yTbH7OLOsVqGQpBKgkwr0
+  label: normalize_email

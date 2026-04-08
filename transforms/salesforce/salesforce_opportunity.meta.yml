@@ -1,0 +1,9 @@
+display_name: Salesforce Opportunity
+description: >
+  Opportunities with account enrichment. Pipeline and win-rate reporting.
+
+table_name: salesforce_opportunity
+tags:
+  - daily
+  - revenue
+incremental: false

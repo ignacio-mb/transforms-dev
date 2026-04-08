@@ -1,0 +1,12 @@
+display_name: Cloud Instance Health
+description: >
+  Operational health per cloud instance — response times, error rates,
+  resource utilization. Used by infra team for capacity planning.
+
+table_name: cloud_instance_health
+tags:
+  - hourly
+  - engineering
+  - critical
+incremental: true
+checkpoint_column: date

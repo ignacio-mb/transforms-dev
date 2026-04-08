@@ -1,0 +1,14 @@
+display_name: Monthly Revenue
+description: >
+  Recognized monthly revenue per subscription, combining self-service Stripe
+  invoices and sold Enterprise deals. Core model for ARR reporting.
+  Replaces dbt monthly_revenue model.
+
+table_name: monthly_revenue
+
+tags:
+  - daily
+  - revenue
+  - critical
+
+incremental: false
