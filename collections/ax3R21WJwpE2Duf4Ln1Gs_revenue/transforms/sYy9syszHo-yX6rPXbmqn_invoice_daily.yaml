@@ -1,0 +1,43 @@
+collection_id: ax3R21WJwpE2Duf4Ln1Gs
+created_at: '2026-04-08T14:47:48.989526Z'
+creator_id: ignacio@metabase.com
+description: null
+entity_id: sYy9syszHo-yX6rPXbmqn
+name: Invoice daily
+owner_email: null
+owner_user_id: ignacio@metabase.com
+source:
+  query:
+    database: Supabase
+    native:
+      query: |
+        -- Invoice Daily
+        --
+        -- One row per day with invoice counts and amounts by status.
+        -- Lightweight incremental transform for real-time revenue monitoring.
+
+        SELECT
+          i.issued_at::date AS day,
+          c.plan,
+          i.status,
+          count(*) AS invoice_count,
+          sum(i.amount) AS total_amount,
+          avg(i.amount) AS avg_amount,
+          count(DISTINCT i.customer_id) AS unique_customers
+        FROM raw.invoices i
+        JOIN raw.customers c ON i.customer_id = c.id
+        GROUP BY 1, 2, 3
+        ORDER BY 1 DESC
+    type: native
+  type: query
+source_database_id: Supabase
+tags: []
+target:
+  database: Supabase
+  name: invoice_daily
+  schema: transforms
+  type: table
+serdes/meta:
+- id: sYy9syszHo-yX6rPXbmqn
+  label: invoice_daily
+  model: Transform
