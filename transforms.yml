@@ -1,61 +1,26 @@
 # transforms.yml — project configuration
 #
-# This file defines project-wide settings used by the build script
-# to generate Metabase serialization YAML.
+# Configured for Supabase test environment.
+# The database name must match exactly what appears in Metabase's Admin → Databases.
 
 project:
   name: bi_transforms
-  # The database name as it appears in Metabase (must match exactly)
-  database: Data Warehouse
+  database: Supabase
 
-# Default schema for transforms that don't specify one.
-# Individual transforms override this in their .meta.yml.
 default_schema: transforms
 
-# Domain-to-schema mapping (mirrors dbt_project.yml schema config).
-# If a transform's domain folder matches a key here, that schema is used
-# unless the transform's .meta.yml overrides it.
 domains:
-  github:
-    schema: github
-    folder: Engineering
+  customers:
+    schema: transforms
+    folder: Customers
   revenue:
-    schema: revenue
+    schema: transforms
     folder: Revenue
-  salesforce:
-    schema: salesforce
-    folder: Revenue
-  campaign:
-    schema: campaign
-    folder: Marketing & Growth
+  support:
+    schema: transforms
+    folder: Support
   product:
-    schema: product
+    schema: transforms
     folder: Product
-  product_events:
-    schema: product_events
-    folder: Product
-  success:
-    schema: success
-    folder: Success Engineering
-  discourse:
-    schema: discourse
-    folder: Success Engineering
-  pylon:
-    schema: pylon
-    folder: Success Engineering
-  infrastructure:
-    schema: infrastructure
-    folder: Engineering
-  stripe:
-    schema: stripe
-    folder: Operations
-  hosting_insights:
-    schema: hosting_insights
-    folder: Product
-  linear:
-    schema: linear
-    folder: Engineering
 
-# Snippets directory — SQL fragments that map to Metabase snippets.
-# These get serialized into the _sync output as well.
 snippets_dir: snippets

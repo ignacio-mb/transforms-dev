@@ -1,48 +1,66 @@
 -- Feature Adoption
 --
--- Tracks which Metabase features are enabled and used per instance.
--- Source for product adoption dashboards and feature rollout tracking.
+-- Which features are enabled per customer, combined with actual usage data.
+-- Helps product team see adoption vs enablement gaps.
 
-WITH features AS (
+WITH feature_flags AS (
   SELECT
-    instance_id,
-    feature_name,
-    is_enabled,
-    first_enabled_at,
-    last_seen_at,
-    usage_count_30d
-  FROM staging.instance_features
-  WHERE last_seen_at >= CURRENT_DATE - INTERVAL '30 days'
+    f.customer_id,
+    f.feature_name,
+    f.is_enabled,
+    f.enabled_at,
+    c.plan,
+    c.company,
+    c.mrr
+  FROM raw.features f
+  JOIN raw.customers c ON f.customer_id = c.id
+  WHERE c.is_active
 ),
 
-instances AS (
+-- Map events to features
+feature_usage AS (
   SELECT
-    id AS instance_id,
-    version,
-    plan_name,
-    hosting_type,
-    created_at AS instance_created_at,
-    user_count
-  FROM staging.metabase_instances
-  WHERE is_active
+    customer_id,
+    CASE event_name
+      WHEN 'transform_run' THEN 'transforms'
+      WHEN 'metabot_query' THEN 'metabot'
+      WHEN 'alert_created' THEN 'alerts'
+      WHEN 'export_csv' THEN 'csv_upload'
+      ELSE NULL
+    END AS feature_name,
+    sum(event_count) AS usage_count_30d,
+    count(DISTINCT event_date) AS usage_days_30d,
+    max(event_date) AS last_used_date
+  FROM raw.product_events
+  WHERE event_date >= CURRENT_DATE - INTERVAL '30 days'
+    AND event_name IN ('transform_run', 'metabot_query', 'alert_created', 'export_csv')
+  GROUP BY 1, 2
 ),
 
 final AS (
   SELECT
-    f.instance_id,
-    f.feature_name,
-    f.is_enabled,
-    f.first_enabled_at,
-    f.last_seen_at,
-    f.usage_count_30d,
-    i.version,
-    i.plan_name,
-    i.hosting_type,
-    i.instance_created_at,
-    i.user_count,
-    CURRENT_DATE - f.first_enabled_at::date AS days_since_enabled
-  FROM features f
-  JOIN instances i ON f.instance_id = i.instance_id
+    ff.customer_id,
+    ff.feature_name,
+    ff.is_enabled,
+    ff.enabled_at,
+    ff.plan,
+    ff.company,
+    ff.mrr,
+    coalesce(fu.usage_count_30d, 0) AS usage_count_30d,
+    coalesce(fu.usage_days_30d, 0) AS usage_days_30d,
+    fu.last_used_date,
+    -- Adoption status
+    CASE
+      WHEN NOT ff.is_enabled THEN 'not_enabled'
+      WHEN ff.is_enabled AND coalesce(fu.usage_count_30d, 0) = 0 THEN 'enabled_unused'
+      WHEN fu.usage_days_30d >= 10 THEN 'power_user'
+      WHEN fu.usage_days_30d >= 3 THEN 'regular'
+      ELSE 'light'
+    END AS adoption_status
+  FROM feature_flags ff
+  LEFT JOIN feature_usage fu
+    ON ff.customer_id = fu.customer_id
+    AND ff.feature_name = fu.feature_name
 )
 
 SELECT * FROM final
