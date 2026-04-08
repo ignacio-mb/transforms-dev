@@ -14,4 +14,4 @@ SELECT
 FROM raw.invoices i
 JOIN raw.customers c ON i.customer_id = c.id
 GROUP BY 1, 2, 3
-ORDER BY 1, 2 DESC
+ORDER BY 1 DESC

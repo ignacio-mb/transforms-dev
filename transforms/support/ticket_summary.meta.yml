@@ -1,11 +1,13 @@
 display_name: Ticket Summary
-description: >
-  Enriched support tickets with SLA compliance, response times,
-  and customer context. Core model for support team dashboards.
+description: 'Enriched support tickets with SLA compliance, response times, and customer
+  context. Core model for support team dashboards.
 
+  '
 table_name: ticket_summary
+schema: transforms
 tags:
-  - daily
-  - support
-incremental: true
-checkpoint_column: created_at
+- daily
+- support
+entity_id: tk72SChxPHpiOngVumkco
+collection_id: YSnkWGtlMqRrZZDVSbqEa
+created_at: '2026-04-08T15:49:07.439272Z'
