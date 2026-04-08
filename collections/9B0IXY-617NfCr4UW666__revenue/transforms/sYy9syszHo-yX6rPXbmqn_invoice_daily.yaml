@@ -1,5 +1,5 @@
 collection_id: 9B0IXY-617NfCr4UW666_
-created_at: '2026-04-08T15:46:52.729946Z'
+created_at: '2026-04-08T15:49:07.431693Z'
 creator_id: null
 description: null
 entity_id: sYy9syszHo-yX6rPXbmqn
@@ -10,12 +10,13 @@ source:
   query:
     database: Supabase
     native:
-      query: |
+      query: |+
         -- Invoice Daily
         --
         -- One row per day with invoice counts and amounts by status.
         -- Lightweight incremental transform for real-time revenue monitoring.
 
+        -- THIS IS A CHANGE!
         SELECT
           i.issued_at::date AS day,
           c.plan,
@@ -28,6 +29,7 @@ source:
         JOIN raw.customers c ON i.customer_id = c.id
         GROUP BY 1, 2, 3
         ORDER BY 1, 2 DESC
+
     type: native
   type: query
 source_database_id: Supabase

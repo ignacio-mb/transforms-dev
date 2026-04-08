@@ -3,6 +3,7 @@
 -- One row per day with invoice counts and amounts by status.
 -- Lightweight incremental transform for real-time revenue monitoring.
 
+-- THIS IS A CHANGE!
 SELECT
   i.issued_at::date AS day,
   c.plan,
@@ -15,3 +16,4 @@ FROM raw.invoices i
 JOIN raw.customers c ON i.customer_id = c.id
 GROUP BY 1, 2, 3
 ORDER BY 1, 2 DESC
+

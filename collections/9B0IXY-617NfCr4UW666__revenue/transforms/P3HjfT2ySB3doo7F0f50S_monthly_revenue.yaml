@@ -1,5 +1,5 @@
 collection_id: 9B0IXY-617NfCr4UW666_
-created_at: '2026-04-08T15:46:52.731768Z'
+created_at: '2026-04-08T15:49:07.433717Z'
 creator_id: null
 description: null
 entity_id: P3HjfT2ySB3doo7F0f50S
@@ -16,6 +16,8 @@ source:
         -- Revenue aggregated by month, plan, and billing cycle.
         -- Core model for ARR dashboards and trend analysis.
 
+
+        -- THIS IS ANOTHER CHANGE!
         WITH invoice_months AS (
           SELECT
             i.customer_id,
