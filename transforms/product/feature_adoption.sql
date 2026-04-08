@@ -14,7 +14,7 @@ WITH feature_flags AS (
     c.mrr
   FROM raw.features f
   JOIN raw.customers c ON f.customer_id = c.id
-  WHERE c.is_active -- THIS IS A CHANGE
+  WHERE c.is_active --this is a change!
 ),
 
 -- Map events to features
