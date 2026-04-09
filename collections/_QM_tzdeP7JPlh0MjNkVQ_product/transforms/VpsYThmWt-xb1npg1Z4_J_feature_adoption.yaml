@@ -77,6 +77,7 @@ source:
         )
 
         SELECT * FROM final
+        order by 1
     type: native
   type: query
 source_database_id: Supabase
