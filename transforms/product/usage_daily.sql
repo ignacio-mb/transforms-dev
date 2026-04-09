@@ -14,4 +14,4 @@ SELECT
 FROM raw.product_events pe
 JOIN raw.customers c ON pe.customer_id = c.id
 GROUP BY 1, 2, 3, 4, 5
-ORDER BY 1 DESC, event_count DESC
+ORDER BY 1, 2 DESC, event_count DESC
