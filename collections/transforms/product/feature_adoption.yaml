@@ -1,16 +1,14 @@
 collection_id: _QM_tzdeP7JPlh0MjNkVQ
 created_at: '2026-04-08T14:48:59.752539Z'
 creator_id: ignacio@metabase.com
-description: null
 entity_id: VpsYThmWt-xb1npg1Z4_J
 name: Feature Adoption
-owner_email: null
 owner_user_id: ignacio@metabase.com
 source:
   query:
     database: Supabase
-    native:
-      query: |
+    stages:
+    - native: |
         -- Feature Adoption
         --
         -- Which features are enabled per customer, combined with actual usage data.
@@ -78,7 +76,8 @@ source:
 
         SELECT * FROM final
         order by 1
-    type: native
+      lib/type: mbql.stage/native
+    lib/type: mbql/query
   type: query
 source_database_id: Supabase
 tags: []

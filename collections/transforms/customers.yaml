@@ -1,0 +1,9 @@
+name: Customers
+entity_id: xWHhkbPvq9R9gVa3Si58u
+slug: customers
+created_at: '2026-04-08T14:46:13.672006Z'
+namespace: transforms
+serdes/meta:
+- id: xWHhkbPvq9R9gVa3Si58u
+  label: customers
+  model: Collection

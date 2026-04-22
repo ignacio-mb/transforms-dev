@@ -1,0 +1,9 @@
+name: Product
+entity_id: _QM_tzdeP7JPlh0MjNkVQ
+slug: product
+created_at: '2026-04-08T14:48:17.279088Z'
+namespace: transforms
+serdes/meta:
+- id: _QM_tzdeP7JPlh0MjNkVQ
+  label: product
+  model: Collection

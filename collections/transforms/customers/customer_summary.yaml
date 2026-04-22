@@ -1,16 +1,14 @@
 collection_id: xWHhkbPvq9R9gVa3Si58u
 created_at: '2026-04-08T14:46:35.799154Z'
 creator_id: ignacio@metabase.com
-description: null
 entity_id: ATJcRFlA0mL5l6CQsGAWA
 name: Customer Summary
-owner_email: null
 owner_user_id: ignacio@metabase.com
 source:
   query:
     database: Supabase
-    native:
-      query: |
+    stages:
+    - native: |
         -- Customer Summary
         --
         -- One row per customer with enriched fields: lifetime revenue,
@@ -107,7 +105,8 @@ source:
         )
 
         SELECT * FROM final
-    type: native
+      lib/type: mbql.stage/native
+    lib/type: mbql/query
   type: query
 source_database_id: Supabase
 tags: []

@@ -1,16 +1,14 @@
 collection_id: _QM_tzdeP7JPlh0MjNkVQ
 created_at: '2026-04-08T14:48:37.29451Z'
 creator_id: ignacio@metabase.com
-description: null
 entity_id: 3n79WUkKDXyOOZSxamOH2
 name: Usage Daily
-owner_email: null
 owner_user_id: ignacio@metabase.com
 source:
   query:
     database: Supabase
-    native:
-      query: |
+    stages:
+    - native: |
         -- Usage Daily
         --
         -- Daily product usage aggregates per customer.
@@ -28,7 +26,8 @@ source:
         JOIN raw.customers c ON pe.customer_id = c.id
         GROUP BY 1, 2, 3, 4, 5
         ORDER BY 1 DESC, event_count DESC
-    type: native
+      lib/type: mbql.stage/native
+    lib/type: mbql/query
   type: query
 source_database_id: Supabase
 tags: []

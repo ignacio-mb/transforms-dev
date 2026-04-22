@@ -1,0 +1,9 @@
+name: Revenue
+entity_id: ax3R21WJwpE2Duf4Ln1Gs
+slug: revenue
+created_at: '2026-04-08T14:47:10.403465Z'
+namespace: transforms
+serdes/meta:
+- id: ax3R21WJwpE2Duf4Ln1Gs
+  label: revenue
+  model: Collection
